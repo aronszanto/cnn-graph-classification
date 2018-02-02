@@ -54,7 +54,7 @@ def sp_kernel(g1, g2=None):
     return K
 
 
-def wl_kernel(g1, g2=None, h=6):
+def wl_kernel(g1, g2=None, h=1):
     if g2 != None:
         graphs = []
         for g in g1:

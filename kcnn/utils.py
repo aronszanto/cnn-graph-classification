@@ -7,7 +7,7 @@ import torch
 import torch.utils.data as utils
 import pickle as pkl
 import pandas as pd
-import os
+import os,sys
 
 
 def load_paper_data(ds_name, use_node_labels):
@@ -163,6 +163,7 @@ def compute_communities(graphs, use_node_labels, community_detection_method):
     for i,G in enumerate(graphs):
         if i % 100 == 0:
             print("Calculating communities for graph %i/%i" % (i, len(graphs)))
+            sys.stdout.flush()
         c = community_detection(G, community_detection_method)
         coms.append(len(c))
         subgraph = []
@@ -200,6 +201,7 @@ def compute_nystrom(ds_name, use_node_labels, embedding_dim, community_detection
         lens.append(community.number_of_nodes())
 
     print("Average size: %.2f" % np.mean(lens))
+    sys.stdout.flush()
     Q = []
 
     for idx, k in enumerate(kernels):
