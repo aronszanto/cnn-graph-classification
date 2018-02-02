@@ -7,6 +7,7 @@ import torch
 import torch.utils.data as utils
 import pickle as pkl
 import pandas as pd
+import os
 
 
 def load_paper_data(ds_name, use_node_labels):
@@ -176,6 +177,10 @@ def compute_communities(graphs, use_node_labels, community_detection_method):
 
 
 def compute_nystrom(ds_name, use_node_labels, embedding_dim, community_detection_method, kernels, seed):
+    load_path = 'Q_dump_bias_balance_42.pkl'
+    if os.path.exists(load_path):
+        print("loading preprocessed data from", load_path)
+        return pkl.load(open(load_path,'rb'))
     if ds_name == "SYNTHETIC":
         graphs, labels = generate_synthetic()
     else:
@@ -196,7 +201,8 @@ def compute_nystrom(ds_name, use_node_labels, embedding_dim, community_detection
         Q_t = model.transform(communities)
         Q_t = np.vstack([np.zeros(embedding_dim), Q_t])
         Q.append(Q_t)
-    pkl.dump((Q, subgraphs, labels, Q_t.shape), open('Q_dump_bias_balance_42.pkl', 'wb'))
+    print("dumping communities to", load_path)
+    pkl.dump((Q, subgraphs, labels, Q_t.shape), open(load_path, 'wb'))
     return Q, subgraphs, labels, Q_t.shape
 
 

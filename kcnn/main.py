@@ -31,8 +31,8 @@ learning_rate = 0.0001
 use_node_labels = False
 from graph_kernels import sp_kernel, wl_kernel
 # else:
-# 	use_node_labels = True
-# 	from graph_kernels_labeled import sp_kernel, wl_kernel
+#     use_node_labels = True
+#     from graph_kernels_labeled import sp_kernel, wl_kernel
 
 # Choose kernels
 kernels=[wl_kernel]
@@ -41,7 +41,7 @@ ds_name = "bias"
 seed = 42
 print("Computing feature maps...")
 Q, subgraphs, labels,shapes = compute_nystrom(ds_name, use_node_labels, dim, community_detection, kernels, seed)
-
+print("Finished feature maps")
 M=np.zeros((shapes[0],shapes[1],len(kernels)))
 for idx,k in enumerate(kernels):
     M[:,:,idx]=Q[idx]
@@ -51,14 +51,15 @@ Q=M
 # Binarize labels
 le = LabelEncoder()
 y = le.fit_transform(labels)
-
+print("Building vocabulary")
 # Build vocabulary
 max_document_length = max([len(x.split(" ")) for x in subgraphs])
 x = np.zeros((len(subgraphs), max_document_length), dtype=np.int32)
 for i in range(len(subgraphs)):
-	communities = subgraphs[i].split()
-	for j in range(len(communities)):
-		x[i,j] = int(communities[j])
+    print(i, "/", len(subgraphs))
+    communities = subgraphs[i].split()
+    for j in range(len(communities)):
+        x[i,j] = int(communities[j])
 
 pkl.dump(x, open('x_news.pkl', 'wb'))
 
@@ -71,54 +72,54 @@ it = 0
 print("Starting cross-validation...")
 
 for train_index, test_index in kf.split(x):
-	it += 1
-	x_train, x_test = x[train_index], x[test_index]
-	y_train, y_test = y[train_index], y[test_index]
+    it += 1
+    x_train, x_test = x[train_index], x[test_index]
+    y_train, y_test = y[train_index], y[test_index]
 
-	train_loader, test_loader = create_train_test_loaders(Q, x_train, x_test, y_train, y_test, batch_size)
+    train_loader, test_loader = create_train_test_loaders(Q, x_train, x_test, y_train, y_test, batch_size)
 
-	cnn = CNN(input_size=num_filters, hidden_size=hidden_size, num_classes=np.unique(y).size, dim=dim, num_kernels=num_kernels, max_document_length=max_document_length)
-	if torch.cuda.is_available():
-		cnn.cuda()
+    cnn = CNN(input_size=num_filters, hidden_size=hidden_size, num_classes=np.unique(y).size, dim=dim, num_kernels=num_kernels, max_document_length=max_document_length)
+    if torch.cuda.is_available():
+        cnn.cuda()
 
-	# Loss and Optimizer
-	if torch.cuda.is_available():
-		criterion = nn.CrossEntropyLoss().cuda()
-	else:
-		criterion = nn.CrossEntropyLoss()
-	optimizer = torch.optim.Adam(cnn.parameters(), lr=learning_rate)
+    # Loss and Optimizer
+    if torch.cuda.is_available():
+        criterion = nn.CrossEntropyLoss().cuda()
+    else:
+        criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(cnn.parameters(), lr=learning_rate)
 
-	# Train the Model
-	for epoch in range(num_epochs):
-		for i, (graphs, labels) in enumerate(train_loader):
-		    graphs = Variable(graphs)
-		    labels = Variable(labels)
+    # Train the Model
+    for epoch in range(num_epochs):
+        for i, (graphs, labels) in enumerate(train_loader):
+            graphs = Variable(graphs)
+            labels = Variable(labels)
 
-		    optimizer.zero_grad()
-		    outputs = cnn(graphs)
-		    if torch.cuda.is_available():
-		    	loss = criterion(outputs, labels.cuda())
-		    else:
-		    	loss = criterion(outputs, labels)
-		    loss.backward()
-		    optimizer.step()
+            optimizer.zero_grad()
+            outputs = cnn(graphs)
+            if torch.cuda.is_available():
+                loss = criterion(outputs, labels.cuda())
+            else:
+                loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
-	# Test the Model
-	cnn.eval()
-	correct = 0
-	total = 0
-	for graphs, labels in test_loader:
-		graphs = Variable(graphs)
-		outputs = cnn(graphs)
-		_, predicted = torch.max(outputs.data, 1)
-		total += labels.size(0)
-		if torch.cuda.is_available():
-			correct += (predicted == labels.cuda()).sum()
-		else:
-			correct += (predicted == labels).sum()
+    # Test the Model
+    cnn.eval()
+    correct = 0
+    total = 0
+    for graphs, labels in test_loader:
+        graphs = Variable(graphs)
+        outputs = cnn(graphs)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        if torch.cuda.is_available():
+            correct += (predicted == labels.cuda()).sum()
+        else:
+            correct += (predicted == labels).sum()
 
-	acc = (100 * correct / total)
-	accs.append(acc)
-	print("Accuracy at iteration "+ str(it) +": " + str(acc))
+    acc = (100 * correct / total)
+    accs.append(acc)
+    print("Accuracy at iteration "+ str(it) +": " + str(acc))
 
 print("Average accuracy: ", np.mean(accs))
