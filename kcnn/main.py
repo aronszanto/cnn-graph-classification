@@ -22,7 +22,7 @@ batch_size = 64
 num_epochs = 100
 num_filters = 256
 hidden_size = 128
-learning_rate = 0.0001
+learning_rate = 0.001
 
 
 
@@ -91,6 +91,7 @@ for train_index, test_index in kf.split(x):
 
     # Train the Model
     for epoch in range(num_epochs):
+        total_loss = 0
         for i, (graphs, labels) in enumerate(train_loader):
             graphs = Variable(graphs)
             labels = Variable(labels)
@@ -103,6 +104,9 @@ for train_index, test_index in kf.split(x):
                 loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+            total_loss += loss.data
+        if epoch % 10 == 0:
+            print("Epoch %i: Loss = %.2f" % (epoch +1, total_loss))
 
     # Test the Model
     cnn.eval()
