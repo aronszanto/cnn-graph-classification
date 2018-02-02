@@ -18,7 +18,7 @@ community_detection = "louvain"
 
 # Hyper Parameters
 dim = 200
-batch_size = 64
+batch_size = 32
 num_epochs = 100
 num_filters = 256
 hidden_size = 128
