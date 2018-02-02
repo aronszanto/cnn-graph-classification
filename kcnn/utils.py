@@ -177,32 +177,41 @@ def compute_communities(graphs, use_node_labels, community_detection_method):
 
 
 def compute_nystrom(ds_name, use_node_labels, embedding_dim, community_detection_method, kernels, seed):
-    load_path = 'Q_dump_bias_balance_42.pkl'
-    if os.path.exists(load_path):
-        print("loading preprocessed data from", load_path)
-        return pkl.load(open(load_path,'rb'))
-    if ds_name == "SYNTHETIC":
-        graphs, labels = generate_synthetic()
+    communities_load_path = 'communities_dump_bias_balance_42.pkl'
+    nystrom_load_path = "nystrom_dump_bias_balance_42.pkl"
+    if os.path.exists(nystrom_load_path):
+        print('loading Nystrom results from ', nystrom_load_path)
+        return pkl.load(open(nystrom_load_path, 'rb'))
+    if os.path.exists(communities_load_path):
+        print("loading preprocessed communities data from", communities_load_path)
+        communities, subgraphs =  pkl.load(open(communities_load_path,'rb'))
     else:
-        graphs, labels = load_data(dataset=ds_name, seed=seed)
-    communities, subgraphs = compute_communities(
-        graphs, use_node_labels, community_detection_method)
+        if ds_name == "SYNTHETIC":
+            graphs, labels = generate_synthetic()
+        else:
+            graphs, labels = load_data(dataset=ds_name, seed=seed)
+        communities, subgraphs = compute_communities(
+            graphs, use_node_labels, community_detection_method)
 
     print("Number of communities: ", len(communities))
+    print("dumping communities to", communities_load_path)
+    pkl.dump((communities, subgraphs), open(communities_load_path, 'wb'))
     lens = []
     for community in communities:
         lens.append(community.number_of_nodes())
 
     print("Average size: %.2f" % np.mean(lens))
     Q = []
+
     for idx, k in enumerate(kernels):
         model = Nystrom(k, n_components=embedding_dim)
         model.fit(communities)
         Q_t = model.transform(communities)
         Q_t = np.vstack([np.zeros(embedding_dim), Q_t])
         Q.append(Q_t)
-    print("dumping communities to", load_path)
-    pkl.dump((Q, subgraphs, labels, Q_t.shape), open(load_path, 'wb'))
+
+    print("Dumping Nystrom output to", nystrom_load_path)
+    pkl.dump((Q, subgraphs, labels, Q_t.shape), open(nystrom_load_path, 'wb'))
     return Q, subgraphs, labels, Q_t.shape
 
 
