@@ -1,4 +1,4 @@
-import torch 
+import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 import torch.utils.data as utils
@@ -8,9 +8,10 @@ from utils import compute_nystrom,create_train_test_loaders
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import KFold
 from model import CNN
+import pickle as pkl
 
 # Dataset
-data_file = "IMDB-MULTI"
+# data_file = "IMDB-BINARY"
 
 # Community detection method
 community_detection = "louvain"
@@ -25,20 +26,21 @@ learning_rate = 0.0001
 
 
 
-unlabeled_data_files = ["IMDB-BINARY", "IMDB-MULTI", "REDDIT-BINARY", "REDDIT-MULTI-5K", "COLLAB", "SYNTHETIC"]
-if data_file in unlabeled_data_files:
-    use_node_labels = False
-    from graph_kernels import sp_kernel, wl_kernel
-else:
-	use_node_labels = True
-	from graph_kernels_labeled import sp_kernel, wl_kernel
+# unlabeled_data_files = ["IMDB-BINARY", "IMDB-MULTI", "REDDIT-BINARY", "REDDIT-MULTI-5K", "COLLAB", "SYNTHETIC"]
+# if data_file in unlabeled_data_files:
+use_node_labels = False
+from graph_kernels import sp_kernel, wl_kernel
+# else:
+# 	use_node_labels = True
+# 	from graph_kernels_labeled import sp_kernel, wl_kernel
 
 # Choose kernels
 kernels=[wl_kernel]
 num_kernels = len(kernels)
-
+ds_name = "bias"
+seed = 42
 print("Computing feature maps...")
-Q, subgraphs, labels,shapes = compute_nystrom(data_file, use_node_labels, dim, community_detection, kernels)
+Q, subgraphs, labels,shapes = compute_nystrom(ds_name, use_node_labels, dim, community_detection, kernels, seed)
 
 M=np.zeros((shapes[0],shapes[1],len(kernels)))
 for idx,k in enumerate(kernels):
@@ -58,6 +60,8 @@ for i in range(len(subgraphs)):
 	for j in range(len(communities)):
 		x[i,j] = int(communities[j])
 
+pkl.dump(x, open('x_news.pkl', 'wb'))
+
 
 kf = KFold(n_splits=10, random_state=None)
 kf.shuffle=True
@@ -72,7 +76,7 @@ for train_index, test_index in kf.split(x):
 	y_train, y_test = y[train_index], y[test_index]
 
 	train_loader, test_loader = create_train_test_loaders(Q, x_train, x_test, y_train, y_test, batch_size)
-		   
+
 	cnn = CNN(input_size=num_filters, hidden_size=hidden_size, num_classes=np.unique(y).size, dim=dim, num_kernels=num_kernels, max_document_length=max_document_length)
 	if torch.cuda.is_available():
 		cnn.cuda()
@@ -89,7 +93,7 @@ for train_index, test_index in kf.split(x):
 		for i, (graphs, labels) in enumerate(train_loader):
 		    graphs = Variable(graphs)
 		    labels = Variable(labels)
-		    
+
 		    optimizer.zero_grad()
 		    outputs = cnn(graphs)
 		    if torch.cuda.is_available():
@@ -98,9 +102,9 @@ for train_index, test_index in kf.split(x):
 		    	loss = criterion(outputs, labels)
 		    loss.backward()
 		    optimizer.step()
-		    
+
 	# Test the Model
-	cnn.eval() 
+	cnn.eval()
 	correct = 0
 	total = 0
 	for graphs, labels in test_loader:
@@ -116,5 +120,5 @@ for train_index, test_index in kf.split(x):
 	acc = (100 * correct / total)
 	accs.append(acc)
 	print("Accuracy at iteration "+ str(it) +": " + str(acc))
-    
+
 print("Average accuracy: ", np.mean(accs))
