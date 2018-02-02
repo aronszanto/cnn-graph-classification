@@ -77,7 +77,7 @@ def load_data(all_loc='../datasets/news_articles_weeks_2017-11-23_2017-12-21_net
 
         frames = [data_pos, data_neg]
         df = pd.concat(frames)
-    df = df.sample(frac=1, random_state=seed)
+    df = df.sample(frac=, random_state=seed)
 
     X = df.drop(columns=[column]).network
     Y = df[column]
@@ -195,7 +195,6 @@ def compute_nystrom(ds_name, use_node_labels, embedding_dim, community_detection
 
     print("Number of communities: ", len(communities))
     print("dumping communities to", communities_load_path)
-    pkl.dump((communities, subgraphs), open(communities_load_path, 'wb'))
     lens = []
     for community in communities:
         lens.append(community.number_of_nodes())
