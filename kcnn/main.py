@@ -124,7 +124,7 @@ for train_index, test_index in kf.split(x):
             correct += (predicted == labels).sum()
 
     test_acc = (100 * correct / total)
-    test_accs.append(acc)
+    test_accs.append(test_acc)
 
     for graphs, labels in train_loader:
         graphs = Variable(graphs)
@@ -137,7 +137,7 @@ for train_index, test_index in kf.split(x):
             correct += (predicted == labels).sum()
 
     train_acc = (100 * correct / total)
-    train_accs.append(acc)
+    train_accs.append(train_acc)
     print("Accuracies at iteration "+ str(it) +": \n\t- Train: " + str(train_acc) + "\n\t- Test: " + str(test_acc))
 
 print("Average accuracies:\n\t- Train: " + np.mean(train_accs) + "\n\t- Test: " + np.mean(test_accs))
