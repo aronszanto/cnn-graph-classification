@@ -139,9 +139,7 @@ for train_index, test_index in kf.split(x):
     train_acc = (100 * correct / total)
     train_accs.append(train_acc)
     print("Accuracies at iteration "+ str(it) +": \n\t- Train: " + str(train_acc) + "\n\t- Test: " + str(test_acc))
-    train_loader.cpu()
-    test_loader.cpu()
     del train_loader
     del test_loader
 
-print("Average accuracies:\n\t- Train: " + np.mean(train_accs) + "\n\t- Test: " + np.mean(test_accs))
+print("Average accuracies:\n\t- Train: " + str(np.mean(train_accs)) + "\n\t- Test: " + str(np.mean(test_accs))
