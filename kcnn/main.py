@@ -142,4 +142,4 @@ for train_index, test_index in kf.split(x):
     del train_loader
     del test_loader
 
-print("Average accuracies:\n\t- Train: " + str(np.mean(train_accs)) + "\n\t- Test: " + str(np.mean(test_accs))
+print("Average accuracies:\n\t- Train: " + str(np.mean(train_accs)) + "\n\t- Test: " + str(np.mean(test_accs)))
