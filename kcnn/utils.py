@@ -77,7 +77,7 @@ def load_data(all_loc='../datasets/news_articles_weeks_2017-11-23_2017-12-21_net
 
         frames = [data_pos, data_neg]
         df = pd.concat(frames)
-    df = df.sample(frac=, random_state=seed)
+    df = df.sample(frac=1, random_state=seed)
 
     X = df.drop(columns=[column]).network
     Y = df[column]
