@@ -56,7 +56,7 @@ print("Building vocabulary")
 max_document_length = max([len(x.split(" ")) for x in subgraphs])
 x = np.zeros((len(subgraphs), max_document_length), dtype=np.int32)
 for i in range(len(subgraphs)):
-    print(i, "/", len(subgraphs))
+    # print(i, "/", len(subgraphs))
     communities = subgraphs[i].split()
     for j in range(len(communities)):
         x[i,j] = int(communities[j])
