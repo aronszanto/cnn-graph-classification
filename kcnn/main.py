@@ -66,7 +66,8 @@ pkl.dump(x, open('x_news.pkl', 'wb'))
 
 kf = KFold(n_splits=10, random_state=None)
 kf.shuffle=True
-accs=[];
+train_accs = []
+test_accs = []
 it = 0
 
 print("Starting cross-validation...")
@@ -106,7 +107,7 @@ for train_index, test_index in kf.split(x):
             optimizer.step()
             total_loss += loss.data
         if epoch % 10 == 0:
-            print("Epoch %i: Loss = %.2f" % (epoch +1, total_loss))
+            print("Epoch %i: Loss = %.2f" % (epoch, total_loss))
 
     # Test the Model
     cnn.eval()
@@ -122,8 +123,21 @@ for train_index, test_index in kf.split(x):
         else:
             correct += (predicted == labels).sum()
 
-    acc = (100 * correct / total)
-    accs.append(acc)
-    print("Accuracy at iteration "+ str(it) +": " + str(acc))
+    test_acc = (100 * correct / total)
+    test_accs.append(acc)
 
-print("Average accuracy: ", np.mean(accs))
+    for graphs, labels in train_loader:
+        graphs = Variable(graphs)
+        outputs = cnn(graphs)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        if torch.cuda.is_available():
+            correct += (predicted == labels.cuda()).sum()
+        else:
+            correct += (predicted == labels).sum()
+
+    train_acc = (100 * correct / total)
+    train_accs.append(acc)
+    print("Accuracies at iteration "+ str(it) +": \n\t- Train: " + str(train_acc) + "\n\t- Test: " + str(test_acc))
+
+print("Average accuracies:\n\t- Train: " + np.mean(train_accs) + "\n\t- Test: " + np.mean(test_accs))
