@@ -7,7 +7,8 @@ import torch
 import torch.utils.data as utils
 import pickle as pkl
 import pandas as pd
-import os,sys
+import os
+import sys
 
 
 def load_paper_data(ds_name, use_node_labels):
@@ -47,11 +48,12 @@ def load_paper_data(ds_name, use_node_labels):
     return Gs, labels
 
 
-def load_data(all_loc='../datasets/news_articles_weeks_2017-11-23_2017-12-21_networks.pkl',
+def load_data(test_size=.2, all_loc='../datasets/news_articles_weeks_2017-11-23_2017-12-21_networks.pkl',
               bias_loc='../datasets/news_articles_weeks_2017-11-23_2017-12-21_networks_bias.pkl',
-              seed=None, dataset=None, min_network_size=50, balance=True):
+              veracity_loc='../datasets/fn_mit_metadata_25.pkl',
+              seed=None, dataset=None, min_network_size=50, pct_data=1, balance=False):
     if seed is None:
-        seed = randint(0, 1e10)
+        seed = randint(0, 2**32 - 1)
     print("Using seed", seed)
     if dataset == "pol":
         path = all_loc
@@ -59,6 +61,11 @@ def load_data(all_loc='../datasets/news_articles_weeks_2017-11-23_2017-12-21_net
     elif dataset == "bias":
         column = "bias"
         path = bias_loc
+    elif dataset == "veracity":
+        column = "veracity"
+        path = veracity_loc
+    else:
+        raise ValueError("dataset", dataset, "not found")
     print("Loading data from", path)
     df = pkl.load(open(path, 'rb'))
 
@@ -77,7 +84,7 @@ def load_data(all_loc='../datasets/news_articles_weeks_2017-11-23_2017-12-21_net
 
         frames = [data_pos, data_neg]
         df = pd.concat(frames)
-    df = df.sample(frac=1, random_state=seed)
+    df = df.sample(frac=pct_data, random_state=seed)
 
     X = df.drop(columns=[column]).network
     Y = df[column]
@@ -160,10 +167,8 @@ def compute_communities(graphs, use_node_labels, community_detection_method):
     subgraphs = []
     counter = 0
     coms = []
-    for i,G in enumerate(graphs):
-        if i % 100 == 0:
-            print("Calculating communities for graph %i/%i" % (i, len(graphs)))
-            sys.stdout.flush()
+    print("Computing communities")
+    for i, G in tqdm(enumerate(graphs)):
         c = community_detection(G, community_detection_method)
         coms.append(len(c))
         subgraph = []
@@ -177,20 +182,21 @@ def compute_communities(graphs, use_node_labels, community_detection_method):
     return communities, subgraphs
 
 
-def compute_nystrom(ds_name, use_node_labels, embedding_dim, community_detection_method, kernels, seed):
-    communities_load_path = 'communities_dump_bias_balance_42.pkl'
-    nystrom_load_path = "nystrom_dump_bias_balance_42.pkl"
+def compute_nystrom(ds_name, pct_data, use_node_labels, embedding_dim, community_detection_method, kernels, seed):
+    communities_load_path = 'communities_dump_" + ds_name + "_balance_42.pkl'
+    nystrom_load_path = "nystrom_dump_" + ds_name + "_balance_42.pkl"
     if os.path.exists(nystrom_load_path):
         print('loading Nystrom results from ', nystrom_load_path)
         return pkl.load(open(nystrom_load_path, 'rb'))
     if os.path.exists(communities_load_path):
         print("loading preprocessed communities data from", communities_load_path)
-        communities, subgraphs =  pkl.load(open(communities_load_path,'rb'))
+        communities, subgraphs = pkl.load(open(communities_load_path, 'rb'))
     else:
         if ds_name == "SYNTHETIC":
             graphs, labels = generate_synthetic()
         else:
-            graphs, labels = load_data(dataset=ds_name, seed=seed)
+            graphs, labels = load_data(
+                dataset=ds_name, pct_data=pct_data, seed=seed)
         communities, subgraphs = compute_communities(
             graphs, use_node_labels, community_detection_method)
 

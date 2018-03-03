@@ -9,6 +9,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import KFold
 from model import CNN
 import pickle as pkl
+import sys
 
 # Dataset
 # data_file = "IMDB-BINARY"
@@ -37,10 +38,11 @@ from graph_kernels import sp_kernel, wl_kernel
 # Choose kernels
 kernels=[wl_kernel]
 num_kernels = len(kernels)
-ds_name = "bias"
+ds_name = sys.argv[1]
+pct_data = float(sys.argv[2])
 seed = 42
 print("Computing feature maps...")
-Q, subgraphs, labels,shapes = compute_nystrom(ds_name, use_node_labels, dim, community_detection, kernels, seed)
+Q, subgraphs, labels,shapes = compute_nystrom(ds_name, pct_data, use_node_labels, dim, community_detection, kernels, seed)
 print("Finished feature maps")
 M=np.zeros((shapes[0],shapes[1],len(kernels)))
 for idx,k in enumerate(kernels):
