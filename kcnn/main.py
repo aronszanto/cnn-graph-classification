@@ -19,12 +19,11 @@ community_detection = "louvain"
 
 # Hyper Parameters
 dim = 200
-batch_size = 32
-num_epochs = 100
-num_filters = 256
+batch_size = 64
+num_epochs = 30
+num_filters = 128
 hidden_size = 128
-learning_rate = 0.001
-
+learning_rate = 0.0002
 
 
 # unlabeled_data_files = ["IMDB-BINARY", "IMDB-MULTI", "REDDIT-BINARY", "REDDIT-MULTI-5K", "COLLAB", "SYNTHETIC"]
@@ -40,6 +39,7 @@ kernels=[wl_kernel]
 num_kernels = len(kernels)
 ds_name = sys.argv[1]
 pct_data = float(sys.argv[2])
+assert(-.01 < pct_data < 1.01)
 seed = 42
 print("Computing feature maps...")
 Q, subgraphs, labels,shapes = compute_nystrom(ds_name, pct_data, use_node_labels, dim, community_detection, kernels, seed)
@@ -96,9 +96,8 @@ for train_index, test_index in kf.split(x):
     for epoch in range(num_epochs):
         total_loss = 0
         for i, (graphs, labels) in enumerate(train_loader):
-            graphs = Variable(graphs)
-            labels = Variable(labels)
-
+            graphs = Variable(graphs).cuda()
+            labels = Variable(labels).cuda()
             optimizer.zero_grad()
             outputs = cnn(graphs)
             if torch.cuda.is_available():
@@ -116,7 +115,7 @@ for train_index, test_index in kf.split(x):
     correct = 0
     total = 0
     for graphs, labels in test_loader:
-        graphs = Variable(graphs)
+        graphs = Variable(graphs).cuda()
         outputs = cnn(graphs)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
@@ -129,7 +128,7 @@ for train_index, test_index in kf.split(x):
     test_accs.append(test_acc)
 
     for graphs, labels in train_loader:
-        graphs = Variable(graphs)
+        graphs = Variable(graphs).cuda()
         outputs = cnn(graphs)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)

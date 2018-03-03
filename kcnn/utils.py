@@ -185,6 +185,7 @@ def compute_communities(graphs, use_node_labels, community_detection_method):
 def compute_nystrom(ds_name, pct_data, use_node_labels, embedding_dim, community_detection_method, kernels, seed):
     communities_load_path = 'communities_dump_" + ds_name + "_balance_42.pkl'
     nystrom_load_path = "nystrom_dump_" + ds_name + "_balance_42.pkl"
+
     if os.path.exists(nystrom_load_path):
         print('loading Nystrom results from ', nystrom_load_path)
         return pkl.load(open(nystrom_load_path, 'rb'))
@@ -235,7 +236,7 @@ def create_train_test_loaders(Q, x_train, x_test, y_train, y_test, batch_size):
                 temp[0, j, k, :] = Q[x_train[i, k], :, j].squeeze()
         my_x.append(temp)
 
-    if torch.cuda.is_available():
+    if False and torch.cuda.is_available():
         tensor_x = torch.stack([torch.cuda.FloatTensor(i)
                                 for i in my_x])  # transform to torch tensors
         tensor_y = torch.cuda.LongTensor(y_train.tolist())
@@ -256,7 +257,7 @@ def create_train_test_loaders(Q, x_train, x_test, y_train, y_test, batch_size):
                 temp[0, j, k, :] = Q[x_test[i, k], :, j].squeeze()
         my_x.append(temp)
 
-    if torch.cuda.is_available():
+    if False and torch.cuda.is_available():
         tensor_x = torch.stack([torch.cuda.FloatTensor(i)
                                 for i in my_x])  # transform to torch tensors
         tensor_y = torch.cuda.LongTensor(y_test.tolist())
